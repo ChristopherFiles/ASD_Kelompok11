@@ -1,8 +1,14 @@
 import datetime
+import difflib
 import json
 import os
 import re
 import sys
+import tempfile
+import time
+
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+os.environ.setdefault("MPLCONFIGDIR", os.path.join(tempfile.gettempdir(), "baytul_cave_matplotlib"))
 
 try:
     import matplotlib.pyplot as plt
@@ -32,7 +38,7 @@ except ImportError:
     TableStyle = None
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = APP_DIR
 MENU_FILE = os.path.join(BASE_DIR, "menu.json")
 SALES_FILE = os.path.join(BASE_DIR, "sales.json")
 ORDER_QUEUE_FILE = os.path.join(BASE_DIR, "orders.json")
@@ -70,8 +76,250 @@ DEFAULT_MENU = {
     "Cheesecake": 23000,
 }
 
+BRAND_NAME = "BAYTUL CAVE"
+BRAND_SUBTEXT = "PT RUMAH RAFLI"
+BRAND_BLUE = "#0B63CE"
+BRAND_NAVY = "#123B68"
+
+ANSI_ENABLED = not os.environ.get("NO_COLOR")
+ANSI = {
+    "reset": "\033[0m",
+    "blue": "\033[94m",
+    "cyan": "\033[96m",
+    "bold": "\033[1m",
+    "muted": "\033[90m",
+}
+
 
 # ================= UTILITIES =================
+
+def color_text(text, *styles):
+    if not ANSI_ENABLED:
+        return str(text)
+    prefix = "".join(ANSI.get(style, "") for style in styles)
+    return f"{prefix}{text}{ANSI['reset']}" if prefix else str(text)
+
+
+def hacker_typing(text, delay=0.028, style="cyan", newline=True):
+    if not sys.stdout.isatty():
+        print(color_text(text, style, "bold"), end="\n" if newline else "")
+        return
+
+    for char in str(text):
+        sys.stdout.write(color_text(char, style, "bold"))
+        sys.stdout.flush()
+        time.sleep(delay)
+    if newline:
+        print()
+
+
+def print_header(title, subtitle=None, width=64):
+    title = str(title).upper()
+    line = "=" * width
+    print()
+    print(color_text(line, "blue", "bold"))
+    print(color_text(title.center(width), "cyan", "bold"))
+    if subtitle:
+        print(color_text(str(subtitle).center(width), "muted"))
+    print(color_text(line, "blue", "bold"))
+
+
+def print_menu_options(title, options):
+    print_header(title)
+    for key, label in options:
+        print(color_text(f"[{key}]", "cyan", "bold"), label)
+
+
+def print_table(title, headers, rows, widths, align_right=None):
+    align_right = set(align_right or [])
+    print_header(title, width=sum(widths) + (3 * (len(widths) - 1)))
+    header = " | ".join(str(value).ljust(widths[index]) for index, value in enumerate(headers))
+    print(color_text(header, "blue", "bold"))
+    print(color_text("-" * len(header), "blue"))
+
+    if not rows:
+        print("Belum ada data".center(len(header)))
+        print(color_text("-" * len(header), "blue"))
+        return
+
+    for row in rows:
+        cells = []
+        for index, value in enumerate(row):
+            text = str(value)
+            if len(text) > widths[index]:
+                text = text[: widths[index] - 3] + "..."
+            cells.append(text.rjust(widths[index]) if index in align_right else text.ljust(widths[index]))
+        print(" | ".join(cells))
+    print(color_text("-" * len(header), "blue"))
+
+
+def normalize_key(text):
+    return re.sub(r"[^a-z0-9]+", "", str(text).lower())
+
+
+def suggest_closest(value, choices, cutoff=0.55):
+    if not value or not choices:
+        return None
+
+    lookup = {normalize_key(choice): choice for choice in choices}
+    match = difflib.get_close_matches(normalize_key(value), lookup.keys(), n=1, cutoff=cutoff)
+    return lookup[match[0]] if match else None
+
+
+def show_suggestion(value, choices, label="input"):
+    suggestion = suggest_closest(value, choices)
+    if suggestion:
+        print(color_text(f"Mungkin maksud Anda: {suggestion}", "cyan", "bold"))
+    else:
+        print(color_text(f"{label} tidak dikenali. Cek kembali tulisan atau pilih dari daftar.", "muted"))
+    return suggestion
+
+
+def prompt_choice(prompt, valid_choices, allow_back=False):
+    valid_choices = [str(choice) for choice in valid_choices]
+    while True:
+        choice = safe_input(prompt).strip()
+        if allow_back and choice == "0":
+            return choice
+        if choice in valid_choices:
+            return choice
+        show_suggestion(choice, valid_choices, "Pilihan")
+
+
+def prompt_menu_choice(prompt, options):
+    keys = [str(key) for key, _ in options]
+    labels = [str(label) for _, label in options]
+    label_to_key = {normalize_key(label): str(key) for key, label in options}
+
+    while True:
+        choice = safe_input(prompt).strip()
+        if choice in keys:
+            return choice
+
+        normalized = normalize_key(choice)
+        if normalized in label_to_key:
+            return label_to_key[normalized]
+
+        suggestion = suggest_closest(choice, labels, cutoff=0.45)
+        if suggestion:
+            key = label_to_key[normalize_key(suggestion)]
+            print(color_text(f"Mungkin maksud Anda: {suggestion} (pilihan {key})", "cyan", "bold"))
+            continue
+
+        show_suggestion(choice, keys, "Pilihan")
+
+
+def prompt_confirm(prompt):
+    yes_values = {"y", "ya", "yes", "iya"}
+    no_values = {"n", "no", "tidak", "ga", "gak"}
+    while True:
+        answer = safe_input(prompt).strip().lower()
+        if answer in yes_values:
+            return True
+        if answer in no_values:
+            return False
+        show_suggestion(answer, list(yes_values | no_values), "Konfirmasi")
+
+
+def prompt_number(prompt, min_value=None, max_value=None):
+    while True:
+        try:
+            value = parse_number(safe_input(prompt))
+        except ValueError:
+            print(color_text("Input harus berupa angka. Contoh: 1 atau 25000.", "muted"))
+            continue
+
+        if min_value is not None and value < min_value:
+            print(color_text(f"Angka minimal {min_value}.", "muted"))
+            continue
+        if max_value is not None and value > max_value:
+            print(color_text(f"Angka maksimal {max_value}.", "muted"))
+            continue
+        return value
+
+
+def prompt_existing_name(prompt, choices, empty_message="Input tidak boleh kosong"):
+    while True:
+        value = safe_input(prompt).strip()
+        if not value:
+            print(empty_message)
+            return None
+
+        exact_lookup = {name.lower(): name for name in choices}
+        if value.lower() in exact_lookup:
+            return exact_lookup[value.lower()]
+
+        title_value = value.title()
+        if title_value in choices:
+            return title_value
+
+        show_suggestion(value, choices, "Nama")
+        return None
+
+
+DAY_NAMES = {
+    0: "Senin",
+    1: "Selasa",
+    2: "Rabu",
+    3: "Kamis",
+    4: "Jumat",
+    5: "Sabtu",
+    6: "Minggu",
+}
+
+MONTH_NAMES = {
+    1: "Januari",
+    2: "Februari",
+    3: "Maret",
+    4: "April",
+    5: "Mei",
+    6: "Juni",
+    7: "Juli",
+    8: "Agustus",
+    9: "September",
+    10: "Oktober",
+    11: "November",
+    12: "Desember",
+}
+
+
+def format_realtime_history(value=None):
+    parsed = datetime.datetime.now() if value is None else parse_datetime(value)
+    if parsed == datetime.datetime.min:
+        parsed = datetime.datetime.now()
+
+    day = DAY_NAMES[parsed.weekday()]
+    month = MONTH_NAMES[parsed.month]
+    return {
+        "hari": day,
+        "tanggal": f"{parsed.day:02d} {month} {parsed.year}",
+        "jam": parsed.strftime("%H:%M:%S"),
+        "full": f"{day}, {parsed.day:02d} {month} {parsed.year} {parsed.strftime('%H:%M:%S')}",
+    }
+
+
+def get_sales_item_counts():
+    sales = load_json_file(SALES_FILE, {})
+    counts = {}
+    if not isinstance(sales, dict):
+        return counts
+
+    for sale in sales.values():
+        if not isinstance(sale, dict):
+            continue
+        for item_name, item_data in sale.get("items", {}).items():
+            qty = item_data[0] if isinstance(item_data, (list, tuple)) and len(item_data) >= 1 else 1
+            try:
+                counts[item_name] = counts.get(item_name, 0) + int(qty)
+            except (TypeError, ValueError):
+                continue
+    return counts
+
+
+def get_top_menu_items(limit=5):
+    counts = get_sales_item_counts()
+    return sorted(counts.items(), key=lambda item: (-item[1], item[0].lower()))[:limit]
+
 
 def safe_input(prompt):
     try:
@@ -164,19 +412,43 @@ class MenuManager:
     def show(self, menu_data=None, title="DAFTAR MENU"):
         menu_data = self.menu if menu_data is None else menu_data
         items = list(menu_data.items()) if isinstance(menu_data, dict) else list(menu_data)
+        item_counts = get_sales_item_counts()
+        top_items = get_top_menu_items(5)
+        top_rank = {name: index for index, (name, _) in enumerate(top_items, start=1)}
 
-        print(f"\n--- {title} ---")
-        print("=" * 58)
-        if not items:
-            print("Belum ada menu")
+        rows = []
+        for index, (name, price) in enumerate(items, start=1):
+            rank = top_rank.get(name)
+            badge = "PALING LARIS" if rank == 1 else (f"TOP {rank}" if rank else "-")
+            rows.append([
+                index,
+                name,
+                format_rupiah(price),
+                item_counts.get(name, 0),
+                badge,
+            ])
+
+        print_table(
+            title,
+            ["No", "Menu", "Harga", "Terjual", "Status"],
+            rows,
+            [4, 30, 14, 8, 13],
+            align_right={0, 2, 3},
+        )
+
+        if top_items:
+            print(color_text("Menu paling banyak dipesan customer:", "cyan", "bold"))
+            for rank, (name, qty) in enumerate(top_items, start=1):
+                price = self.menu.get(name)
+                price_text = format_rupiah(price) if price is not None else "Tidak ada di menu"
+                print(f"{rank:>2}. {name:<30} {qty:>4} terjual | {price_text}")
         else:
-            for index, (name, price) in enumerate(items, start=1):
-                print(f"{index:>2}. {name:<32} {format_rupiah(price):>15}")
-        print("=" * 58)
+            print(color_text("Menu terlaris belum tersedia karena belum ada data sales.", "muted"))
 
     def add(self):
         try:
-            name = safe_input("Nama menu: ").strip().title()
+            raw_name = safe_input("Nama menu: ").strip()
+            name = raw_name.title()
             if not name:
                 print("Nama menu tidak boleh kosong")
                 return
@@ -186,7 +458,14 @@ class MenuManager:
                 print("Gunakan Update Menu jika ingin mengubah harga menu.")
                 return
 
-            price = parse_number(safe_input("Harga: "))
+            suggestion = suggest_closest(raw_name, self.menu.keys())
+            if suggestion:
+                print(color_text(f"Mungkin maksud Anda menu yang sudah ada: {suggestion}", "cyan", "bold"))
+                if not prompt_confirm("Tetap tambah sebagai menu baru? (y/n): "):
+                    print("Tambah menu dibatalkan.")
+                    return
+
+            price = prompt_number("Harga: ", min_value=1)
             if price <= 0:
                 print("Harga harus lebih dari 0")
                 return
@@ -199,15 +478,11 @@ class MenuManager:
 
     def update(self):
         try:
-            name = safe_input("Nama menu: ").strip().title()
-            if name not in self.menu:
-                print("Menu tidak ada")
+            name = prompt_existing_name("Nama menu: ", list(self.menu.keys()))
+            if not name:
                 return
 
-            price = parse_number(safe_input("Harga baru: "))
-            if price <= 0:
-                print("Harga harus lebih dari 0")
-                return
+            price = prompt_number("Harga baru: ", min_value=1)
 
             self.menu[name] = price
             self.save()
@@ -218,13 +493,11 @@ class MenuManager:
     def delete(self):
         try:
             self.show(title="DAFTAR MENU YANG TERSEDIA")
-            name = safe_input("Nama menu: ").strip().title()
-            if name not in self.menu:
-                print("Menu tidak ada")
+            name = prompt_existing_name("Nama menu: ", list(self.menu.keys()))
+            if not name:
                 return
 
-            confirm = safe_input(f"Yakin hapus {name}? (y/n): ").strip().lower()
-            if confirm != "y":
+            if not prompt_confirm(f"Yakin hapus {name}? (y/n): "):
                 print("Hapus menu dibatalkan")
                 return
 
@@ -254,6 +527,7 @@ class MenuManager:
             result = self.search_items(keyword)
             if not result:
                 print("Menu tidak ditemukan")
+                show_suggestion(keyword, self.menu.keys(), "Menu")
                 return {}
 
             self.show(result, f"HASIL PENCARIAN: {keyword}")
@@ -278,14 +552,16 @@ class MenuManager:
 
     def sort_menu(self, menu_data=None):
         try:
-            print("\n--- SORTING MENU ---")
-            print("1. Harga Naik")
-            print("2. Harga Turun")
-            print("3. Nama A-Z")
-            print("4. Nama Z-A")
-            print("0. Kembali")
+            options = [
+                ("1", "Harga Naik"),
+                ("2", "Harga Turun"),
+                ("3", "Nama A-Z"),
+                ("4", "Nama Z-A"),
+                ("0", "Kembali"),
+            ]
+            print_menu_options("SORTING MENU", options)
 
-            choice = safe_input("Pilih: ").strip()
+            choice = prompt_menu_choice("Pilih: ", options)
             if choice == "0":
                 return []
 
@@ -321,7 +597,7 @@ class PDFGenerator:
             fontName="Helvetica-Bold",
             fontSize=22,
             leading=26,
-            textColor=colors.HexColor("#1F3A5F"),
+            textColor=colors.HexColor(BRAND_BLUE),
             spaceAfter=4,
         ))
         styles.add(ParagraphStyle(
@@ -330,7 +606,7 @@ class PDFGenerator:
             fontName="Helvetica-Bold",
             fontSize=12,
             leading=15,
-            textColor=colors.HexColor("#1F3A5F"),
+            textColor=colors.HexColor(BRAND_NAVY),
             spaceBefore=8,
             spaceAfter=8,
         ))
@@ -395,9 +671,9 @@ class PDFGenerator:
         styles = self.get_pdf_styles()
 
         header_left = [
-            Paragraph("CAFE ENTERPRISE", styles["BrandTitle"]),
-            Paragraph("Jl. Aroma Kopi No. 11, Kota Kopi", styles["SmallMuted"]),
-            Paragraph("Telp. 021-1100-CAFE | cafe.enterprise@example.com", styles["SmallMuted"]),
+            Paragraph(BRAND_NAME, styles["BrandTitle"]),
+            Paragraph(BRAND_SUBTEXT, styles["SmallMuted"]),
+            Paragraph("Coffee, Eatery, and Cashier System", styles["SmallMuted"]),
         ]
         header_right = [
             Paragraph("<b>INVOICE</b>", styles["Right"]),
@@ -448,7 +724,7 @@ class PDFGenerator:
         item_data.extend(self.build_item_rows(cart))
         table = Table(item_data, colWidths=[36, 210, 48, 95, 105], repeatRows=1)
         table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F3A5F")),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(BRAND_NAVY)),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, -1), 9),
@@ -477,8 +753,8 @@ class PDFGenerator:
             ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, -1), 10),
             ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-            ("LINEABOVE", (0, -1), (-1, -1), 1, colors.HexColor("#1F3A5F")),
-            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EAF0F8")),
+            ("LINEABOVE", (0, -1), (-1, -1), 1, colors.HexColor(BRAND_NAVY)),
+            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EAF3FF")),
             ("LEFTPADDING", (0, 0), (-1, -1), 7),
             ("RIGHTPADDING", (0, 0), (-1, -1), 7),
             ("TOPPADDING", (0, 0), (-1, -1), 7),
@@ -509,9 +785,9 @@ class PDFGenerator:
         )
         styles = self.get_pdf_styles()
         elements = [
-            Paragraph("<b>CAFE ENTERPRISE</b>", styles["CenterSmall"]),
-            Paragraph("Jl. Aroma Kopi No. 11", styles["CenterSmall"]),
-            Paragraph("Telp. 021-1100-CAFE", styles["CenterSmall"]),
+            Paragraph(f"<b>{BRAND_NAME}</b>", styles["CenterSmall"]),
+            Paragraph(BRAND_SUBTEXT, styles["CenterSmall"]),
+            Paragraph("Coffee, Eatery, and Cashier System", styles["CenterSmall"]),
             Spacer(1, 10),
         ]
 
@@ -629,6 +905,10 @@ class OrderManager:
         self.orders = self.load()
         return self.orders.get(str(order_no).strip().upper())
 
+    def suggest_order_no(self, order_no):
+        self.orders = self.load()
+        return suggest_closest(str(order_no).strip().upper(), self.orders.keys(), cutoff=0.45)
+
     def sort_orders_by_latest(self, orders):
         return sorted(
             orders,
@@ -668,9 +948,12 @@ class OrderManager:
 
         if not order:
             print("Order tidak ditemukan.")
+            suggestion = self.suggest_order_no(order_no)
+            if suggestion:
+                print(color_text(f"Mungkin maksud Anda: {suggestion}", "cyan", "bold"))
             return None
 
-        print("\n--- DETAIL ORDER ---")
+        print_header("DETAIL ORDER")
         print(f"Nomor Order : {order_no}")
         print(f"Nama        : {order.get('customer_name', '-')}")
         print(f"Tanggal     : {format_datetime_display(order.get('tanggal', '-'))}")
@@ -753,15 +1036,18 @@ class TransactionManager:
 
     def kasir_menu(self):
         while True:
-            print("\n--- MENU KASIR ---")
-            print("1. Konfirmasi Pembayaran Order")
-            print("2. Cek Status Order")
-            print("3. Laporan Bulanan")
-            print("4. Dashboard Grafik")
-            print("0. Logout")
+            options = [
+                ("1", "Konfirmasi Pembayaran Order"),
+                ("2", "Cek Status Order"),
+                ("3", "Laporan Bulanan"),
+                ("4", "Dashboard Grafik"),
+                ("5", "Riwayat Transaksi"),
+                ("0", "Logout"),
+            ]
+            print_menu_options("MENU KASIR", options)
 
             try:
-                choice = safe_input("Pilih: ").strip()
+                choice = prompt_menu_choice("Pilih: ", options)
 
                 if choice == "1":
                     self.confirm_order_payment()
@@ -772,6 +1058,9 @@ class TransactionManager:
                     wait_enter()
                 elif choice == "4":
                     self.show_chart()
+                    wait_enter()
+                elif choice == "5":
+                    self.show_transaction_history()
                     wait_enter()
                 elif choice == "0":
                     break
@@ -793,14 +1082,9 @@ class TransactionManager:
             print(self.order_manager.format_order_line(index, order_no, order))
 
         try:
-            choice = parse_number(safe_input("Pilih nomor order: "))
+            choice = prompt_number("Pilih nomor order: ", min_value=1, max_value=len(pending_orders))
         except (ValueError, EOFError, KeyboardInterrupt):
             print("Pilihan harus berupa angka")
-            wait_enter()
-            return
-
-        if choice < 1 or choice > len(pending_orders):
-            print("Nomor order tidak ada")
             wait_enter()
             return
 
@@ -809,7 +1093,7 @@ class TransactionManager:
 
         grand_total = int(order.get("grand_total", 0))
         try:
-            pay = parse_number(safe_input("Nominal bayar: "))
+            pay = prompt_number("Nominal bayar: ", min_value=0)
         except (ValueError, EOFError, KeyboardInterrupt):
             print("Input pembayaran tidak valid")
             wait_enter()
@@ -822,13 +1106,13 @@ class TransactionManager:
 
         print("Kembalian:", format_rupiah(pay - grand_total))
         try:
-            confirm = safe_input("Konfirmasi pembayaran? (y/n): ").strip().lower()
+            confirm = prompt_confirm("Konfirmasi pembayaran? (y/n): ")
         except (EOFError, KeyboardInterrupt):
             print("Pembayaran dibatalkan.")
             wait_enter()
             return
 
-        if confirm != "y":
+        if not confirm:
             print("Pembayaran dibatalkan.")
             wait_enter()
             return
@@ -837,9 +1121,16 @@ class TransactionManager:
         cart = self.order_manager.normalize_items(order.get("items", {}))
         subtotal = int(order.get("subtotal", 0))
         tax = int(order.get("tax", 0))
+        paid_at = now_string()
+        history_time = format_realtime_history(paid_at)
 
         self.sales[invoice_no] = {
-            "tanggal": now_string(),
+            "tanggal": paid_at,
+            "hari": history_time["hari"],
+            "tanggal_lengkap": history_time["tanggal"],
+            "jam": history_time["jam"],
+            "order_no": order_no,
+            "customer_name": order.get("customer_name", "-"),
             "items": cart,
             "total": grand_total,
         }
@@ -849,12 +1140,15 @@ class TransactionManager:
         print("Pembayaran berhasil dikonfirmasi.")
         print(f"Order {order_no} menjadi PAID.")
         print(f"Invoice {invoice_no} berhasil dibuat.")
+        print(color_text(f"Riwayat transaksi: {history_time['full']}", "cyan", "bold"))
 
-        print("\n--- CETAK ---")
-        print("1. Invoice A4")
-        print("2. Struk Thermal")
-        print("0. Tidak Cetak")
-        cetak = safe_input("Pilih cetak: ").strip()
+        options = [
+            ("1", "Invoice A4"),
+            ("2", "Struk Thermal"),
+            ("0", "Tidak Cetak"),
+        ]
+        print_menu_options("CETAK", options)
+        cetak = prompt_menu_choice("Pilih cetak: ", options)
 
         if cetak == "1":
             self.pdf.generate_invoice(
@@ -893,11 +1187,14 @@ class TransactionManager:
             print(self.order_manager.format_order_line(index, order_no, order))
 
         while True:
-            print("\n1. Lihat Detail Order")
-            print("0. Kembali")
+            options = [
+                ("1", "Lihat Detail Order"),
+                ("0", "Kembali"),
+            ]
+            print_menu_options("AKSI STATUS ORDER", options)
 
             try:
-                choice = safe_input("Pilih: ").strip()
+                choice = prompt_menu_choice("Pilih: ", options)
             except (EOFError, KeyboardInterrupt):
                 break
 
@@ -909,6 +1206,46 @@ class TransactionManager:
                 break
             else:
                 print("Pilihan tidak valid")
+
+    def show_transaction_history(self):
+        self.sales = self.load()
+        self.order_manager.orders = self.order_manager.load()
+        sales_items = sorted(
+            self.sales.items(),
+            key=lambda item: parse_datetime(item[1].get("tanggal", "")),
+            reverse=True,
+        )
+
+        rows = []
+        for index, (invoice_no, sale) in enumerate(sales_items, start=1):
+            history_time = format_realtime_history(sale.get("tanggal", ""))
+            order_no = sale.get("order_no", "-")
+            customer = sale.get("customer_name", "-")
+            if order_no == "-" or customer == "-":
+                for saved_order_no, order in self.order_manager.orders.items():
+                    if order.get("invoice_no") == invoice_no:
+                        order_no = saved_order_no
+                        customer = order.get("customer_name", "-")
+                        break
+
+            rows.append([
+                index,
+                invoice_no,
+                order_no,
+                customer,
+                history_time["hari"],
+                history_time["tanggal"],
+                history_time["jam"],
+                format_rupiah(sale.get("total", 0)),
+            ])
+
+        print_table(
+            "RIWAYAT TRANSAKSI REALTIME",
+            ["No", "Invoice", "Order", "Customer", "Hari", "Tanggal", "Jam", "Total"],
+            rows,
+            [4, 10, 9, 16, 8, 17, 9, 14],
+            align_right={0, 7},
+        )
 
     def generate_monthly_report(self):
         self.sales = self.load()
@@ -942,9 +1279,9 @@ class TransactionManager:
                 qty = item_data[0] if isinstance(item_data, (list, tuple)) and len(item_data) >= 1 else 1
                 item_count[item_name] = item_count.get(item_name, 0) + int(qty)
 
-        elements.append(Paragraph("LAPORAN PENJUALAN BULANAN", styles["BrandTitle"]))
+        elements.append(Paragraph(f"{BRAND_NAME} - LAPORAN PENJUALAN BULANAN", styles["BrandTitle"]))
         elements.append(Paragraph(
-            f"Dibuat pada {datetime.datetime.now().strftime('%d-%m-%Y %H:%M')} | Sumber data: sales.json",
+            f"{BRAND_SUBTEXT} | Dibuat pada {datetime.datetime.now().strftime('%d-%m-%Y %H:%M')} | Sumber data: sales.json",
             styles["SmallMuted"],
         ))
         elements.append(Spacer(1, 14))
@@ -979,7 +1316,7 @@ class TransactionManager:
 
         top_table = Table(top_data, colWidths=[40, 350, 120])
         top_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F3A5F")),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(BRAND_NAVY)),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, -1), 9),
@@ -1016,7 +1353,7 @@ class TransactionManager:
 
         detail_table = Table(detail_data, colWidths=[32, 74, 94, 220, 96], repeatRows=1)
         detail_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F3A5F")),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(BRAND_NAVY)),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 0), (-1, -1), 8),
@@ -1057,9 +1394,9 @@ class TransactionManager:
             return
 
         plt.figure()
-        plt.bar(item_count.keys(), item_count.values())
+        plt.bar(item_count.keys(), item_count.values(), color=BRAND_BLUE)
         plt.xticks(rotation=45)
-        plt.title("Menu Terlaris")
+        plt.title(f"{BRAND_NAME} - Menu Terlaris")
         plt.tight_layout()
         plt.show()
 
@@ -1071,28 +1408,38 @@ class CafeSystem:
         self.menu_manager = MenuManager()
         self.order_manager = OrderManager()
         self.transaction_manager = TransactionManager(self.menu_manager, self.order_manager)
+        self.banner_shown = False
 
     def login(self):
         while True:
             try:
-                print("\n=== LOGIN KARYAWAN ===")
+                print_header("LOGIN KARYAWAN", BRAND_SUBTEXT)
                 user = safe_input("Username: ").strip().lower()
                 pw = safe_input("Password: ").strip()
                 if user in USERS and USERS[user] == pw:
                     return user
                 print("Login salah")
+                show_suggestion(user, USERS.keys(), "Username")
             except (EOFError, KeyboardInterrupt):
                 sys.exit()
 
     def run(self):
+        if not self.banner_shown:
+            hacker_typing(f"Initializing {BRAND_NAME} system...")
+            hacker_typing("Loading customer favorites, cashier queue, and blue terminal UI...")
+            print_header(BRAND_NAME, BRAND_SUBTEXT)
+            self.banner_shown = True
+
         while True:
-            print("\n--- CAFE SYSTEM ---")
-            print("1. Karyawan")
-            print("2. Pelanggan")
-            print("0. Keluar")
+            options = [
+                ("1", "Karyawan"),
+                ("2", "Pelanggan"),
+                ("0", "Keluar"),
+            ]
+            print_menu_options(f"{BRAND_NAME} SYSTEM", options)
 
             try:
-                choice = safe_input("Pilih: ").strip()
+                choice = prompt_menu_choice("Pilih: ", options)
             except (EOFError, KeyboardInterrupt):
                 print("Program selesai.")
                 break
@@ -1113,17 +1460,20 @@ class CafeSystem:
 
     def admin_menu(self):
         while True:
-            print("\n--- MENU ADMIN ---")
-            print("1. Lihat Menu")
-            print("2. Tambah Menu")
-            print("3. Update Menu")
-            print("4. Hapus Menu")
-            print("5. Laporan Bulanan")
-            print("6. Dashboard Grafik")
-            print("0. Logout")
+            options = [
+                ("1", "Lihat Menu"),
+                ("2", "Tambah Menu"),
+                ("3", "Update Menu"),
+                ("4", "Hapus Menu"),
+                ("5", "Laporan Bulanan"),
+                ("6", "Dashboard Grafik"),
+                ("7", "Riwayat Transaksi"),
+                ("0", "Logout"),
+            ]
+            print_menu_options("MENU ADMIN", options)
 
             try:
-                choice = safe_input("Pilih: ").strip()
+                choice = prompt_menu_choice("Pilih: ", options)
             except (EOFError, KeyboardInterrupt):
                 break
 
@@ -1144,6 +1494,9 @@ class CafeSystem:
             elif choice == "6":
                 self.transaction_manager.show_chart()
                 wait_enter()
+            elif choice == "7":
+                self.transaction_manager.show_transaction_history()
+                wait_enter()
             elif choice == "0":
                 break
             else:
@@ -1154,13 +1507,15 @@ class CafeSystem:
 
         while True:
             self.menu_manager.show(active_items)
-            print("\n--- AKSI LIHAT MENU ---")
-            print("1. Search Menu")
-            print("2. Sorting Menu")
-            print("0. Kembali")
+            options = [
+                ("1", "Search Menu"),
+                ("2", "Sorting Menu"),
+                ("0", "Kembali"),
+            ]
+            print_menu_options("AKSI LIHAT MENU", options)
 
             try:
-                choice = safe_input("Pilih: ").strip()
+                choice = prompt_menu_choice("Pilih: ", options)
             except (EOFError, KeyboardInterrupt):
                 break
 
@@ -1173,6 +1528,7 @@ class CafeSystem:
                 result = self.menu_manager.search_items(keyword)
                 if not result:
                     print("Menu tidak ditemukan")
+                    show_suggestion(keyword, self.menu_manager.menu.keys(), "Menu")
                 else:
                     active_items = list(result.items())
             elif choice == "2":
@@ -1186,13 +1542,15 @@ class CafeSystem:
 
     def customer_menu(self):
         while True:
-            print("\n--- MENU PELANGGAN ---")
-            print("1. Order")
-            print("2. Cek Status Order")
-            print("0. Kembali")
+            options = [
+                ("1", "Order"),
+                ("2", "Cek Status Order"),
+                ("0", "Kembali"),
+            ]
+            print_menu_options("MENU PELANGGAN", options)
 
             try:
-                choice = safe_input("Pilih: ").strip()
+                choice = prompt_menu_choice("Pilih: ", options)
             except (EOFError, KeyboardInterrupt):
                 break
 
@@ -1212,13 +1570,16 @@ class CafeSystem:
         return subtotal, tax, grand_total
 
     def show_cart(self, cart):
-        print("\n--- KERANJANG ---")
+        print_header("KERANJANG")
         if not cart:
             print("Keranjang masih kosong")
             return
 
-        for name, item in cart.items():
-            print(f"{name:<30} x{item[0]:<3} {format_rupiah(item[1]):>12}")
+        rows = [
+            [index, name, item[0], format_rupiah(item[1])]
+            for index, (name, item) in enumerate(cart.items(), start=1)
+        ]
+        print_table("ISI KERANJANG", ["No", "Menu", "Qty", "Subtotal"], rows, [4, 30, 6, 14], align_right={0, 2, 3})
 
         subtotal, tax, grand_total = self.calculate_cart_totals(cart)
         print("-" * 50)
@@ -1228,10 +1589,13 @@ class CafeSystem:
 
     def show_order_summary(self, customer_name, cart):
         subtotal, tax, grand_total = self.calculate_cart_totals(cart)
-        print("\n--- RINGKASAN ORDER ---")
+        print_header("RINGKASAN ORDER")
         print(f"Nama pelanggan: {customer_name}")
-        for name, item in cart.items():
-            print(f"- {name:<30} x{item[0]:<3} {format_rupiah(item[1]):>12}")
+        rows = [
+            [index, name, item[0], format_rupiah(item[1])]
+            for index, (name, item) in enumerate(cart.items(), start=1)
+        ]
+        print_table("ITEM DIPESAN", ["No", "Menu", "Qty", "Subtotal"], rows, [4, 30, 6, 14], align_right={0, 2, 3})
         print("-" * 50)
         print(f"Subtotal    : {format_rupiah(subtotal)}")
         print(f"Pajak 10%   : {format_rupiah(tax)}")
@@ -1254,16 +1618,18 @@ class CafeSystem:
 
         while True:
             self.menu_manager.show(active_items)
-            print("\n--- AKSI ORDER ---")
-            print("1. Pilih Menu")
-            print("2. Search Menu")
-            print("3. Sorting Menu")
-            print("4. Lihat Keranjang")
-            print("5. Checkout")
-            print("0. Batal Order")
+            options = [
+                ("1", "Pilih Menu"),
+                ("2", "Search Menu"),
+                ("3", "Sorting Menu"),
+                ("4", "Lihat Keranjang"),
+                ("5", "Checkout"),
+                ("0", "Batal Order"),
+            ]
+            print_menu_options("AKSI ORDER", options)
 
             try:
-                choice = safe_input("Pilih: ").strip()
+                choice = prompt_menu_choice("Pilih: ", options)
             except (EOFError, KeyboardInterrupt):
                 print("Order dibatalkan.")
                 break
@@ -1279,6 +1645,7 @@ class CafeSystem:
                 result = self.menu_manager.search_items(keyword)
                 if not result:
                     print("Menu tidak ditemukan")
+                    show_suggestion(keyword, self.menu_manager.menu.keys(), "Menu")
                 else:
                     active_items = list(result.items())
             elif choice == "3":
@@ -1304,15 +1671,8 @@ class CafeSystem:
             return
 
         try:
-            menu_index = parse_number(safe_input("Nomor menu: "))
-            if menu_index < 1 or menu_index > len(active_items):
-                print("Nomor menu tidak ada")
-                return
-
-            qty = parse_number(safe_input("Quantity: "))
-            if qty <= 0:
-                print("Quantity harus angka dan lebih dari 0")
-                return
+            menu_index = prompt_number("Nomor menu: ", min_value=1, max_value=len(active_items))
+            qty = prompt_number("Quantity: ", min_value=1)
         except (ValueError, EOFError, KeyboardInterrupt):
             print("Input tidak valid")
             return
@@ -1322,10 +1682,10 @@ class CafeSystem:
         if name in cart:
             old_qty, old_subtotal = cart[name]
             cart[name] = [old_qty + qty, old_subtotal + subtotal]
+            print(color_text(f"{name} sudah ada di keranjang. Quantity digabung menjadi {cart[name][0]}.", "cyan", "bold"))
         else:
             cart[name] = [qty, subtotal]
-
-        print(f"{name} x{qty} masuk keranjang")
+            print(f"{name} x{qty} masuk keranjang")
 
     def checkout_customer_order(self, customer_name, cart):
         if not cart:
@@ -1335,11 +1695,11 @@ class CafeSystem:
         subtotal, tax, grand_total = self.show_order_summary(customer_name, cart)
 
         try:
-            confirm = safe_input("Konfirmasi checkout? (y/n): ").strip().lower()
+            confirm = prompt_confirm("Konfirmasi checkout? (y/n): ")
         except (EOFError, KeyboardInterrupt):
             return False
 
-        if confirm == "y":
+        if confirm:
             order_no = self.order_manager.place_order(customer_name, cart, subtotal, tax, grand_total)
             print("Order berhasil dibuat.")
             print(f"Nomor order kamu: {order_no}")
@@ -1347,10 +1707,6 @@ class CafeSystem:
             wait_enter()
             return True
 
-        if confirm == "n":
-            return False
-
-        print("Pilihan tidak valid")
         return False
 
     def customer_check_status(self):

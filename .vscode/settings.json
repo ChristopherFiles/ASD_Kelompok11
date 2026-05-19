@@ -1,0 +1,5 @@
+{
+    "python.defaultInterpreterPath": "C:\\Users\\LENOVO\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "python.terminal.activateEnvironment": false,
+    "python.analysis.typeCheckingMode": "basic"
+}

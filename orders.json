@@ -1,3 +1,17 @@
 {
-
+    "ORD0001": {
+        "tanggal": "2026-05-19 22:10:31",
+        "customer_name": "asu",
+        "items": {
+            "Cheesecake": [
+                2,
+                46000
+            ]
+        },
+        "subtotal": 46000,
+        "tax": 4600,
+        "grand_total": 50600,
+        "status": "PAID",
+        "invoice_no": "INV0006"
+    }
 }

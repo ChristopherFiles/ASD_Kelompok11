@@ -1,263 +1,136 @@
-# ASD_Kelompok11
-# ☕ Cafe Enterprise System
+# Cafe Enterprise System
 
-Sistem Manajemen Café berbasis Python dengan arsitektur OOP profesional.
+Sistem manajemen cafe berbasis Python untuk admin, kasir, dan pelanggan. Versi ini memakai tampilan terminal biru, efek typing ala terminal hacker, pengelolaan menu, order pelanggan, pembayaran kasir, laporan PDF, dan dashboard penjualan.
 
----
+## Fitur Utama
 
-## 🚀 Fitur Utama
+### Tampilan Terminal
+- Tema teks biru/cyan dengan ANSI color.
+- Banner startup dengan animasi typing.
+- Menu, tabel, ringkasan order, dan status dibuat lebih rapi.
+- Mode cepat tersedia dengan environment variable `CAFE_FAST=1`.
 
-### 🔐 Authentication
-- Login Admin & Kasir
-- Role-based access
-- CTRL + Z global untuk kembali ke menu utama
+### Admin
+- Lihat menu.
+- Cari dan sorting menu.
+- Reset tampilan hasil pencarian.
+- Tambah, update, dan hapus menu.
+- Laporan bulanan PDF.
+- Dashboard grafik menu terlaris.
+- Dashboard bisnis ringkas: total transaksi, pendapatan, rata-rata transaksi, item terjual, order pending, dan top menu.
 
----
+### Kasir
+- Konfirmasi pembayaran order.
+- Validasi nominal bayar dan hitung kembalian.
+- Cek status order.
+- Cetak invoice A4 atau struk thermal PDF.
+- Akses laporan bulanan, grafik, dan dashboard bisnis.
 
-### 👨‍💼 Admin Features
-- Lihat Menu
-- Tambah Menu
-- Update Menu
-- Hapus Menu
-- Laporan Bulanan PDF
-- Dashboard Grafik Penjualan
+### Pelanggan
+- Buat order dengan nama pelanggan.
+- Cari dan sorting menu.
+- Reset daftar menu setelah pencarian.
+- Lihat keranjang.
+- Ubah quantity item keranjang.
+- Hapus item dari keranjang.
+- Checkout dan mendapatkan nomor order.
+- Cek status order.
+- Rekomendasi menu berdasarkan tren penjualan dan budget.
 
----
+## Struktur File
 
-### 💳 Kasir Features
-- Transaksi Penjualan
-- Input Nama Pemesan
-- Input Jumlah Pesanan
-- Diskon (%)
-- Pajak 10%
-- Hitung Kembalian otomatis
-- Cetak:
-  - Invoice A4 (PDF)
-  - Struk Thermal (PDF)
-- QR Code pembayaran
-- Barcode Invoice
-- Laporan Bulanan PDF
-- Dashboard Grafik
-
----
-
-### 📊 Dashboard
-- Grafik Menu Terlaris (matplotlib)
-
----
-
-### 📄 PDF Output
-- Invoice A4 format tabel rapi
-- Struk thermal layout printer kasir
-- Logo café
-- Nomor invoice otomatis
-- QR Code
-- Barcode Code128
-- Laporan Bulanan detail (Nama, Tanggal, Menu, Qty, Total)
-
----
-
-## 🧠 Arsitektur
-
-Menggunakan OOP (Object Oriented Programming):
-
-```
-CafeSystem
-├── MenuManager
-├── TransactionManager
-└── PDFGenerator
+```text
+ASD_Kelompok11-main/
+  cafe.py
+  cafe.py.bak
+  menu.json
+  orders.json
+  sales.json
+  README.md
 ```
 
-Struktur file:
+## Kebutuhan Opsional
 
-```
-📁 cafe-enterprise
- ├── cafe_system.py
- ├── menu.json
- ├── sales.json
- ├── logo_cafe.png
- └── README.md
-```
-
----
-
-# 🛠️ Instalasi
-
-## 1️⃣ Clone Repository
+Program inti bisa berjalan tanpa library tambahan. Beberapa fitur membutuhkan package berikut:
 
 ```bash
-git clone https://github.com/username/cafe-enterprise.git
-cd cafe-enterprise
+pip install reportlab matplotlib pillow
 ```
 
----
+- `reportlab` dipakai untuk invoice, struk, dan laporan PDF.
+- `matplotlib` dipakai untuk dashboard grafik.
+- `pillow` biasanya dibutuhkan oleh ReportLab ketika memproses gambar/logo.
 
-## 2️⃣ Buat Virtual Environment (Recommended)
+## Cara Menjalankan
+
+Masuk ke folder proyek, lalu jalankan:
 
 ```bash
-python -m venv venv
+python cafe.py
 ```
 
-Aktifkan:
-
-### Windows
-```bash
-venv\Scripts\activate
-```
-
-### Mac/Linux
-```bash
-source venv/bin/activate
-```
-
----
-
-## 3️⃣ Install Dependencies
+Jika ingin mematikan animasi typing supaya program lebih cepat:
 
 ```bash
-pip install qrcode
-pip install python-barcode
-pip install reportlab
-pip install matplotlib
-pip install pillow
+set CAFE_FAST=1
+python cafe.py
 ```
 
-Atau gunakan:
+Di PowerShell:
 
-```bash
-pip install -r requirements.txt
+```powershell
+$env:CAFE_FAST="1"
+python cafe.py
 ```
 
----
+## Login Default
 
-## 4️⃣ Jalankan Program
+| Role | Username | Password |
+| --- | --- | --- |
+| Admin | `admin` | `1234` |
+| Kasir | `kasir` | `1234` |
 
-```bash
-python cafe_system.py
-```
+## Alur Pelanggan
 
----
+1. Pilih menu `Pelanggan`.
+2. Pilih `Order`.
+3. Masukkan nama pelanggan.
+4. Pilih menu, cari menu, sorting, atau lihat rekomendasi.
+5. Cek keranjang dan ubah quantity bila perlu.
+6. Checkout untuk mendapatkan nomor order.
+7. Bayar ke kasir dengan nomor order tersebut.
 
-# 🔑 Default Login
+## Alur Kasir
 
-| Role  | Username | Password |
-|-------|----------|----------|
-| Admin | admin    | 1234     |
-| Kasir | kasir    | 1234     |
+1. Pilih menu `Karyawan`.
+2. Login sebagai `kasir`.
+3. Pilih `Konfirmasi Pembayaran Order`.
+4. Pilih order pending.
+5. Masukkan nominal bayar.
+6. Cetak invoice atau struk jika diperlukan.
 
----
+## Output File
 
-# 🎮 Cara Penggunaan
+File output dibuat di folder yang sama dengan `cafe.py`:
 
-## CTRL + Z (Penting)
-
-Tekan **CTRL + Z** atau **CTRL + C** kapan saja untuk kembali ke:
-
-➡ MENU UTAMA (Login)
-
-Berlaku di:
-- Saat pilih menu
-- Saat input transaksi
-- Saat tambah/update menu
-- Saat laporan
-- Saat grafik
-
----
-
-## 💳 Alur Transaksi
-
-1. Login sebagai kasir
-2. Pilih "Transaksi"
-3. Input:
-   - Nama Pemesan
-   - Pilih menu
-   - Jumlah
-4. Input Diskon (jika ada)
-5. Sistem hitung:
-   - Pajak 10%
-   - Total bayar
-   - Kembalian
-6. Pilih cetak:
-   - Invoice A4
-   - Struk Thermal
-
----
-
-# 📦 Output Files
-
-Setelah transaksi:
-
-```
+```text
 Invoice_INV0001.pdf
 Struk_INV0001.pdf
-qr_INV0001.png
-barcode_INV0001.png
-```
-
-Laporan bulanan:
-
-```
 Laporan_Bulanan.pdf
 ```
 
----
+## Data
 
-# 📈 Dashboard Grafik
+- `menu.json` menyimpan daftar menu dan harga.
+- `orders.json` menyimpan order pelanggan dan status pembayaran.
+- `sales.json` menyimpan transaksi yang sudah dibayar.
 
-Menampilkan grafik:
+Status order:
 
-- Menu Terlaris
-- Total jumlah penjualan per item
+- `WAITING_PAYMENT`: order sudah dibuat, belum dibayar.
+- `PAID`: pembayaran sudah dikonfirmasi kasir.
+- `CANCELLED`: order dibatalkan.
 
-Menggunakan matplotlib.
+## Catatan
 
----
-
-# ⚠ Error Handling
-
-Sistem sudah menangani:
-
-- Input harga salah
-- Input jumlah bukan angka
-- Uang kurang
-- Menu tidak ditemukan
-- CTRL + Z keluar dari sesi
-- File JSON kosong
-
----
-
-# 💎 Kelebihan Sistem
-
-✔ OOP Architecture  
-✔ Clean Code  
-✔ PDF Professional Layout  
-✔ Thermal Receipt Mode  
-✔ QR & Barcode  
-✔ Statistik Penjualan  
-✔ Role-based Login  
-✔ Global CTRL+Z  
-
----
-
-# 🔮 Pengembangan Selanjutnya
-
-- Versi GUI (Tkinter / CustomTkinter)
-- Versi Web (Flask)
-- Database MySQL/PostgreSQL
-- Multi-user production system
-- Export Excel
-- Sistem stok otomatis
-- Integrasi printer thermal asli
-
----
-
-# 👨‍💻 Author
-
-Cafe Enterprise System  
-Built with ❤️ using Python
-
----
-
-# 📜 License
-
-Open-source project for educational & commercial prototype use.
+Tekan `CTRL+C` atau `CTRL+Z` pada input untuk kembali atau keluar dari menu aktif. Jika warna ANSI tidak tampil benar di terminal lama, jalankan program di Windows Terminal, PowerShell terbaru, atau terminal modern lainnya.

@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Cafe System",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}\\cafe.py",
+            "console": "integratedTerminal",
+            "env": {
+                "CAFE_FAST": "1"
+            }
+        }
+    ]
+}
