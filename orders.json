@@ -1,7 +1,7 @@
 {
     "ORD0001": {
         "tanggal": "2026-05-19 22:10:31",
-        "customer_name": "asu",
+        "customer_name": "misaella",
         "items": {
             "Cheesecake": [
                 2,
@@ -13,5 +13,24 @@
         "grand_total": 50600,
         "status": "PAID",
         "invoice_no": "INV0006"
+    },
+    "ORD0002": {
+        "tanggal": "2026-05-20 05:45:56",
+        "customer_name": "baytull",
+        "items": {
+            "Cheesecake": [
+                3,
+                69000
+            ],
+            "Kopi Susu Gula Aren": [
+                2,
+                40000
+            ]
+        },
+        "subtotal": 109000,
+        "tax": 10900,
+        "grand_total": 119900,
+        "status": "PAID",
+        "invoice_no": "INV0007"
     }
 }

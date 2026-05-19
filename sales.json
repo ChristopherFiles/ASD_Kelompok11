@@ -1,6 +1,7 @@
 {
     "INV0001": {
         "tanggal": "2026-05-13 15:04:57.816905",
+        "customer_name": "Rafi",
         "items": {
             "Cappuccino": [
                 10,
@@ -11,6 +12,7 @@
     },
     "INV0003": {
         "tanggal": "2026-05-15 22:12:44",
+        "customer_name": "Sinta",
         "items": {
             "Matcha Latte": [
                 2,
@@ -21,6 +23,7 @@
     },
     "INV0004": {
         "tanggal": "2026-05-18 23:38:23",
+        "customer_name": "Bima",
         "items": {
             "Nasi Goreng": [
                 5,
@@ -31,6 +34,7 @@
     },
     "INV0005": {
         "tanggal": "2026-05-18 23:43:42",
+        "customer_name": "Dewi",
         "items": {
             "Cheesecake": [
                 1,
@@ -45,6 +49,7 @@
     },
     "INV0006": {
         "tanggal": "2026-05-19 22:11:46",
+        "customer_name": "misaella",
         "items": {
             "Cheesecake": [
                 2,
@@ -52,5 +57,24 @@
             ]
         },
         "total": 50600
+    },
+    "INV0007": {
+        "tanggal": "2026-05-20 05:45:56",
+        "hari": "Rabu",
+        "tanggal_lengkap": "20 Mei 2026",
+        "jam": "05:45:56",
+        "order_no": "ORD0002",
+        "customer_name": "baytull",
+        "items": {
+            "Cheesecake": [
+                3,
+                69000
+            ],
+            "Kopi Susu Gula Aren": [
+                2,
+                40000
+            ]
+        },
+        "total": 119900
     }
 }
