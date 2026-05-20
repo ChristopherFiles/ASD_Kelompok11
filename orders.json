@@ -1,5 +1,70 @@
 {
     "ORD0001": {
+        "tanggal": "2026-05-13 15:04:57.816905",
+        "customer_name": "Rafi",
+        "items": {
+            "Cappuccino": [
+                10,
+                220000
+            ]
+        },
+        "subtotal": 220000,
+        "discount": 22000,
+        "tax": 19800,
+        "grand_total": 217800,
+        "status": "PAID",
+        "invoice_no": "INV0001"
+    },
+    "ORD0003": {
+        "tanggal": "2026-05-15 22:12:44",
+        "customer_name": "Sinta",
+        "items": {
+            "Matcha Latte": [
+                2,
+                48000
+            ]
+        },
+        "subtotal": 48000,
+        "tax": 4800,
+        "grand_total": 52800,
+        "status": "PAID",
+        "invoice_no": "INV0003"
+    },
+    "ORD0004": {
+        "tanggal": "2026-05-18 23:38:23",
+        "customer_name": "Bima",
+        "items": {
+            "Nasi Goreng": [
+                5,
+                140000
+            ]
+        },
+        "subtotal": 140000,
+        "tax": 14000,
+        "grand_total": 154000,
+        "status": "PAID",
+        "invoice_no": "INV0004"
+    },
+    "ORD0005": {
+        "tanggal": "2026-05-18 23:43:42",
+        "customer_name": "Dewi",
+        "items": {
+            "Cheesecake": [
+                1,
+                23000
+            ],
+            "Nasi Goreng": [
+                2,
+                56000
+            ]
+        },
+        "subtotal": 79000,
+        "tax": 7900,
+        "grand_total": 86900,
+        "status": "PAID",
+        "invoice_no": "INV0005"
+    },
+    "ORD0006": {
         "tanggal": "2026-05-19 22:10:31",
         "customer_name": "misaella",
         "items": {
@@ -14,7 +79,7 @@
         "status": "PAID",
         "invoice_no": "INV0006"
     },
-    "ORD0002": {
+    "ORD0007": {
         "tanggal": "2026-05-20 05:45:56",
         "customer_name": "baytul1",
         "items": {
@@ -33,9 +98,9 @@
         "status": "PAID",
         "invoice_no": "INV0007"
     },
-    "ORD0003": {
+    "ORD0008": {
         "tanggal": "2026-05-20 14:05:02",
-        "customer_name": "baytul",
+        "customer_name": "baytul1",
         "items": {
             "Nasi Goreng": [
                 5,
@@ -48,7 +113,7 @@
         "status": "PAID",
         "invoice_no": "INV0008"
     },
-    "ORD0004": {
+    "ORD0009": {
         "tanggal": "2026-05-20 14:46:02",
         "customer_name": "misael (she/her)",
         "items": {

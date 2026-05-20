@@ -64,7 +64,7 @@ BASE_DIR = APP_DIR
 MENU_FILE = os.path.join(BASE_DIR, "menu.json")
 SALES_FILE = os.path.join(BASE_DIR, "sales.json")
 ORDER_QUEUE_FILE = os.path.join(BASE_DIR, "orders.json")
-LOGO_PATH = os.path.join(BASE_DIR, "logo_cafe.png")
+LOGO_PATH = os.path.join(BASE_DIR, "logo_cave.png")
 
 WAITING_PAYMENT = "WAITING_PAYMENT"
 PAID = "PAID"
@@ -218,8 +218,8 @@ class MenuManager:
     def sort_menu(self, menu_data=None):
         try:
             options = [
-                ("1", "Harga Naik"),
-                ("2", "Harga Turun"),
+                ("1", "Harga Termurah-Termahal"),
+                ("2", "Harga Termahal-Termurah"),
                 ("3", "Nama A-Z"),
                 ("4", "Nama Z-A"),
                 ("0", "Kembali"),

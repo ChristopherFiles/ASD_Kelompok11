@@ -1,6 +1,10 @@
 {
     "INV0001": {
         "tanggal": "2026-05-13 15:04:57.816905",
+        "hari": "Rabu",
+        "tanggal_lengkap": "13 Mei 2026",
+        "jam": "15:04:57",
+        "order_no": "ORD0001",
         "customer_name": "Rafi",
         "items": {
             "Cappuccino": [
@@ -12,6 +16,10 @@
     },
     "INV0003": {
         "tanggal": "2026-05-15 22:12:44",
+        "hari": "Jumat",
+        "tanggal_lengkap": "15 Mei 2026",
+        "jam": "22:12:44",
+        "order_no": "ORD0003",
         "customer_name": "Sinta",
         "items": {
             "Matcha Latte": [
@@ -23,6 +31,10 @@
     },
     "INV0004": {
         "tanggal": "2026-05-18 23:38:23",
+        "hari": "Senin",
+        "tanggal_lengkap": "18 Mei 2026",
+        "jam": "23:38:23",
+        "order_no": "ORD0004",
         "customer_name": "Bima",
         "items": {
             "Nasi Goreng": [
@@ -34,6 +46,10 @@
     },
     "INV0005": {
         "tanggal": "2026-05-18 23:43:42",
+        "hari": "Senin",
+        "tanggal_lengkap": "18 Mei 2026",
+        "jam": "23:43:42",
+        "order_no": "ORD0005",
         "customer_name": "Dewi",
         "items": {
             "Cheesecake": [
@@ -49,6 +65,10 @@
     },
     "INV0006": {
         "tanggal": "2026-05-19 22:11:46",
+        "hari": "Selasa",
+        "tanggal_lengkap": "19 Mei 2026",
+        "jam": "22:11:46",
+        "order_no": "ORD0006",
         "customer_name": "misaella",
         "items": {
             "Cheesecake": [
@@ -63,8 +83,8 @@
         "hari": "Rabu",
         "tanggal_lengkap": "20 Mei 2026",
         "jam": "05:45:56",
-        "order_no": "ORD0002",
-        "customer_name": "baytull",
+        "order_no": "ORD0007",
+        "customer_name": "baytul1",
         "items": {
             "Cheesecake": [
                 3,
@@ -82,8 +102,8 @@
         "hari": "Rabu",
         "tanggal_lengkap": "20 Mei 2026",
         "jam": "14:06:02",
-        "order_no": "ORD0003",
-        "customer_name": "baytul",
+        "order_no": "ORD0008",
+        "customer_name": "baytul1",
         "items": {
             "Nasi Goreng": [
                 5,
@@ -97,7 +117,7 @@
         "hari": "Rabu",
         "tanggal_lengkap": "20 Mei 2026",
         "jam": "14:46:41",
-        "order_no": "ORD0004",
+        "order_no": "ORD0009",
         "customer_name": "misael (she/her)",
         "items": {
             "Mocha": [
