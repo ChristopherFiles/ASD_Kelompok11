@@ -53,29 +53,6 @@ USERS = {
     "kasir": "1234",
 }
 
-DEFAULT_MENU = {
-    "Americano": 18000,
-    "Cappuccino": 22000,
-    "Cafe Latte": 23000,
-    "Kopi Susu Gula Aren": 20000,
-    "Espresso": 15000,
-    "Macchiato": 24000,
-    "Mocha": 25000,
-    "Vanilla Latte": 26000,
-    "Matcha Latte": 24000,
-    "Chocolate": 21000,
-    "Lemon Tea": 16000,
-    "Lychee Tea": 18000,
-    "Mineral Water": 8000,
-    "Croissant": 18000,
-    "French Fries": 17000,
-    "Chicken Katsu Rice": 32000,
-    "Nasi Goreng": 28000,
-    "Spaghetti Bolognese": 30000,
-    "Chicken Sandwich": 27000,
-    "Cheesecake": 23000,
-}
-
 BRAND_NAME = "BAYTUL CAVE"
 BRAND_SUBTEXT = "PT RUMAH RAFLI"
 BRAND_BLUE = "#0B63CE"
@@ -399,12 +376,7 @@ class MenuManager:
         self.menu = self.load()
 
     def load(self):
-        menu = load_json_file(MENU_FILE, {})
-        if not menu:
-            menu = DEFAULT_MENU.copy()
-            self.menu = menu
-            self.save()
-        return menu
+        return load_json_file(MENU_FILE, {})
 
     def save(self):
         save_json_file(MENU_FILE, self.menu)
