@@ -76,5 +76,20 @@
             ]
         },
         "total": 119900
+    },
+    "INV0008": {
+        "tanggal": "2026-05-20 14:06:02",
+        "hari": "Rabu",
+        "tanggal_lengkap": "20 Mei 2026",
+        "jam": "14:06:02",
+        "order_no": "ORD0003",
+        "customer_name": "baytul",
+        "items": {
+            "Nasi Goreng": [
+                5,
+                140000
+            ]
+        },
+        "total": 154000
     }
 }

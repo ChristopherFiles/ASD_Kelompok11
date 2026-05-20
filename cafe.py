@@ -53,7 +53,7 @@ USERS = {
     "kasir": "1234",
 }
 
-BRAND_NAME = "BAYTUL CAVE"
+BRAND_NAME = "BAYTUL CAFE"
 BRAND_SUBTEXT = "PT RUMAH RAFLI"
 BRAND_BLUE = "#0B63CE"
 BRAND_NAVY = "#123B68"
@@ -150,17 +150,6 @@ def show_suggestion(value, choices, label="input"):
     else:
         print(color_text(f"{label} tidak dikenali. Cek kembali tulisan atau pilih dari daftar.", "muted"))
     return suggestion
-
-
-def prompt_choice(prompt, valid_choices, allow_back=False):
-    valid_choices = [str(choice) for choice in valid_choices]
-    while True:
-        choice = safe_input(prompt).strip()
-        if allow_back and choice == "0":
-            return choice
-        if choice in valid_choices:
-            return choice
-        show_suggestion(choice, valid_choices, "Pilihan")
 
 
 def prompt_menu_choice(prompt, options):
@@ -488,25 +477,6 @@ class MenuManager:
             for name, price in self.menu.items()
             if keyword in name.lower() or (digits and digits in str(price))
         }
-
-    def search(self):
-        try:
-            keyword = safe_input("Cari menu berdasarkan nama/harga: ").strip()
-            if not keyword:
-                print("Kata kunci tidak boleh kosong")
-                return {}
-
-            result = self.search_items(keyword)
-            if not result:
-                print("Menu tidak ditemukan")
-                show_suggestion(keyword, self.menu.keys(), "Menu")
-                return {}
-
-            self.show(result, f"HASIL PENCARIAN: {keyword}")
-            return result
-        except (EOFError, KeyboardInterrupt):
-            print("Kembali...")
-            return {}
 
     def get_sorted_items(self, choice, menu_data=None):
         menu_data = self.menu if menu_data is None else menu_data

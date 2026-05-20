@@ -16,7 +16,7 @@
     },
     "ORD0002": {
         "tanggal": "2026-05-20 05:45:56",
-        "customer_name": "baytull",
+        "customer_name": "baytul1",
         "items": {
             "Cheesecake": [
                 3,
@@ -32,5 +32,20 @@
         "grand_total": 119900,
         "status": "PAID",
         "invoice_no": "INV0007"
+    },
+    "ORD0003": {
+        "tanggal": "2026-05-20 14:05:02",
+        "customer_name": "baytul",
+        "items": {
+            "Nasi Goreng": [
+                5,
+                140000
+            ]
+        },
+        "subtotal": 140000,
+        "tax": 14000,
+        "grand_total": 154000,
+        "status": "PAID",
+        "invoice_no": "INV0008"
     }
 }
