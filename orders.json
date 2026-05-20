@@ -47,5 +47,24 @@
         "grand_total": 154000,
         "status": "PAID",
         "invoice_no": "INV0008"
+    },
+    "ORD0004": {
+        "tanggal": "2026-05-20 14:46:02",
+        "customer_name": "misael (she/her)",
+        "items": {
+            "Mocha": [
+                1,
+                10000
+            ],
+            "Mineral Water": [
+                1,
+                8000
+            ]
+        },
+        "subtotal": 18000,
+        "tax": 1800,
+        "grand_total": 19800,
+        "status": "PAID",
+        "invoice_no": "INV0009"
     }
 }

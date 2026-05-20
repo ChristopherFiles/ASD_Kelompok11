@@ -91,5 +91,24 @@
             ]
         },
         "total": 154000
+    },
+    "INV0009": {
+        "tanggal": "2026-05-20 14:46:41",
+        "hari": "Rabu",
+        "tanggal_lengkap": "20 Mei 2026",
+        "jam": "14:46:41",
+        "order_no": "ORD0004",
+        "customer_name": "misael (she/her)",
+        "items": {
+            "Mocha": [
+                1,
+                10000
+            ],
+            "Mineral Water": [
+                1,
+                8000
+            ]
+        },
+        "total": 19800
     }
 }
