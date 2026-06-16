@@ -1,3 +1,6 @@
+# Link YouTube:
+https://youtu.be/LM0EKXRYwCU?si=eOxbs2w2MATsG_K9
+
 # Cafe Enterprise System
 
 Sistem manajemen cafe berbasis Python untuk admin, kasir, dan pelanggan. Versi ini memakai tampilan terminal biru, efek typing ala terminal hacker, pengelolaan menu, order pelanggan, pembayaran kasir, laporan PDF, dan dashboard penjualan.
